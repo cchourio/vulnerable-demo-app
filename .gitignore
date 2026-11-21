@@ -1,0 +1,23 @@
+# Dependencias y entorno
+/vendor/
+.env
+.env.*
+!.env.example
+
+# Base de datos local (se genera con init_db.php)
+/data/*.db
+/data/*.sqlite
+/data/*.sqlite3
+!/data/.gitkeep
+
+# Logs y temporales
+*.log
+/tmp/
+/cache/
+
+# IDE y SO
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
