@@ -1,15 +1,20 @@
 <?php
 require_once __DIR__ . '/config.php';
 $pageTitle = 'Catálogo — Norte';
-$term = $_GET['term'] ?? '';
+$term = input_str($_GET, 'term');
 $results = [];
 $sqlError = '';
 
 if ($term !== '') {
-    $sql = "SELECT id, name, description, price FROM products WHERE name LIKE '%$term%' OR description LIKE '%$term%'";
     try {
-        $results = db()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = db()->prepare(
+            "SELECT id, name, description, price FROM products
+             WHERE name LIKE :pat ESCAPE '\\' OR description LIKE :pat ESCAPE '\\'"
+        );
+        $stmt->execute([':pat' => '%' . addcslashes($term, '%_\\') . '%']);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e) {
+        error_log('search.php: ' . $e->getMessage());
         $results = [];
         $sqlError = 'No pudimos completar la búsqueda. Intenta de nuevo.';
     }
@@ -30,17 +35,17 @@ require __DIR__ . '/includes/header.php';
     <p class="page-lead">Explora productos o busca por nombre y descripción.</p>
 
     <form method="get" action="search.php" class="search-bar">
-        <input type="search" id="term" name="term" value="<?= htmlspecialchars($term) ?>" placeholder="Buscar productos…">
+        <input type="search" id="term" name="term" value="<?= e($term) ?>" placeholder="Buscar productos…">
         <button class="btn" type="submit">Buscar</button>
     </form>
 
     <?php if ($sqlError): ?>
-        <p class="alert alert-error"><?= htmlspecialchars($sqlError) ?></p>
+        <p class="alert alert-error"><?= e($sqlError) ?></p>
     <?php endif; ?>
 
     <?php if ($term !== ''): ?>
         <p class="muted" style="margin-bottom:1rem">
-            Resultados para “<?= htmlspecialchars($term) ?>” · <?= count($results) ?> productos
+            Resultados para “<?= e($term) ?>” · <?= count($results) ?> productos
         </p>
     <?php endif; ?>
 
@@ -54,8 +59,8 @@ require __DIR__ . '/includes/header.php';
                 <article class="product">
                     <div class="product-media"><?= $icons[$i % count($icons)] ?></div>
                     <div class="product-body">
-                        <h3><?= htmlspecialchars($row['name']) ?></h3>
-                        <p><?= htmlspecialchars($row['description']) ?></p>
+                        <h3><?= e($row['name']) ?></h3>
+                        <p><?= e($row['description']) ?></p>
                         <div class="price">$<?= number_format((float)$row['price'], 2) ?></div>
                     </div>
                 </article>

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/config.php';
 $pageTitle = 'Norte — Tecnología para tu ritmo';
 
-$q = $_GET['q'] ?? '';
+$q = input_str($_GET, 'q');
 $products = [];
 try {
     $products = db()->query('SELECT id, name, description, price FROM products ORDER BY id LIMIT 4')->fetchAll(PDO::FETCH_ASSOC);
@@ -49,8 +49,8 @@ require __DIR__ . '/includes/header.php';
             <article class="product">
                 <div class="product-media"><?= $icons[$i % count($icons)] ?></div>
                 <div class="product-body">
-                    <h3><?= htmlspecialchars($p['name']) ?></h3>
-                    <p><?= htmlspecialchars($p['description']) ?></p>
+                    <h3><?= e($p['name']) ?></h3>
+                    <p><?= e($p['description']) ?></p>
                     <div class="price">$<?= number_format((float)$p['price'], 2) ?></div>
                 </div>
             </article>
@@ -61,11 +61,11 @@ require __DIR__ . '/includes/header.php';
         <h2 class="page-title" style="font-size:1.55rem">¿Cómo te llamamos en tu próxima visita?</h2>
         <p class="page-lead">Guarda tu nombre para personalizar recomendaciones en la tienda.</p>
         <form method="get" action="index.php" class="search-bar" style="max-width:520px">
-            <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Tu nombre">
+            <input type="text" name="q" value="<?= e($q) ?>" placeholder="Tu nombre">
             <button class="btn" type="submit">Guardar</button>
         </form>
         <?php if ($q !== ''): ?>
-            <p class="welcome">Hola, <?= $q ?>. Ya preparamos tu espacio Norte.</p>
+            <p class="welcome">Hola, <?= e($q) ?>. Ya preparamos tu espacio Norte.</p>
         <?php endif; ?>
     </section>
 </main>

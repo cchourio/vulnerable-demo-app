@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/config.php';
-require_login();
+require_admin();
 
 $pageTitle = 'Panel — Norte';
-$users = db()->query('SELECT id, username, email, role, password FROM users')->fetchAll(PDO::FETCH_ASSOC);
+$users = db()->query('SELECT id, username, email, role FROM users ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
 $productCount = (int) db()->query('SELECT COUNT(*) FROM products')->fetchColumn();
 $reviewCount = (int) db()->query('SELECT COUNT(*) FROM comments')->fetchColumn();
 
@@ -14,11 +14,14 @@ require __DIR__ . '/includes/header.php';
         <div>
             <h1 class="page-title">Panel</h1>
             <p class="page-lead" style="margin:0">
-                Hola, <?= htmlspecialchars($_SESSION['user']) ?> ·
-                <?= htmlspecialchars($_SESSION['role'] ?? 'user') ?>
+                Hola, <?= e($_SESSION['user']) ?> ·
+                <?= e($_SESSION['role']) ?>
             </p>
         </div>
-        <a class="btn btn-ghost" href="logout.php">Cerrar sesión</a>
+        <form method="post" action="logout.php" style="margin:0">
+            <?= csrf_field() ?>
+            <button class="btn btn-ghost" type="submit">Cerrar sesión</button>
+        </form>
     </div>
 
     <div class="stats">
@@ -36,16 +39,6 @@ require __DIR__ . '/includes/header.php';
         </div>
     </div>
 
-    <section class="panel" style="margin-bottom:1.25rem">
-        <h2 style="margin:0 0 0.75rem;font-family:var(--display);font-size:1.25rem">Integraciones</h2>
-        <p class="muted">Claves de la tienda (configuración actual).</p>
-        <ul class="muted">
-            <li>API payments: <span class="mono"><?= htmlspecialchars(API_KEY) ?></span></li>
-            <li>Session secret: <span class="mono"><?= htmlspecialchars(SECRET_TOKEN) ?></span></li>
-            <li>Admin fallback: <span class="mono"><?= htmlspecialchars(ADMIN_PASS) ?></span></li>
-        </ul>
-    </section>
-
     <section class="panel">
         <h2 style="margin:0 0 0.75rem;font-family:var(--display);font-size:1.25rem">Usuarios</h2>
         <div style="overflow-x:auto">
@@ -56,17 +49,15 @@ require __DIR__ . '/includes/header.php';
                         <th>Usuario</th>
                         <th>Email</th>
                         <th>Rol</th>
-                        <th>Password</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($users as $u): ?>
                     <tr>
-                        <td><?= (int)$u['id'] ?></td>
-                        <td><?= htmlspecialchars($u['username']) ?></td>
-                        <td><?= htmlspecialchars($u['email']) ?></td>
-                        <td><?= htmlspecialchars($u['role']) ?></td>
-                        <td><span class="mono"><?= htmlspecialchars($u['password']) ?></span></td>
+                        <td><?= (int) $u['id'] ?></td>
+                        <td><?= e($u['username']) ?></td>
+                        <td><?= e($u['email']) ?></td>
+                        <td><?= e($u['role']) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

@@ -1,12 +1,32 @@
 <?php
+/**
+ * Inicializa la base de datos de la demo. Solo se ejecuta desde la terminal:
+ *
+ *   php init_db.php           crea la base si no existe
+ *   php init_db.php --force   la borra y la vuelve a crear
+ *
+ * Genera contraseñas aleatorias para las cuentas demo, las muestra una única vez
+ * y guarda solo su hash.
+ */
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 require_once __DIR__ . '/config.php';
+
+$force = in_array('--force', $argv ?? [], true);
 
 $dataDir = __DIR__ . '/data';
 if (!is_dir($dataDir)) {
-    mkdir($dataDir, 0755, true);
+    mkdir($dataDir, 0750, true);
 }
 
 if (file_exists(DB_PATH)) {
+    if (!$force) {
+        fwrite(STDERR, "La base de datos ya existe. Usa --force para borrarla y recrearla.\n");
+        exit(1);
+    }
     unlink(DB_PATH);
 }
 
@@ -16,10 +36,10 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->exec('
     CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
+        username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         email TEXT,
-        role TEXT DEFAULT "user"
+        role TEXT NOT NULL DEFAULT "user"
     );
 
     CREATE TABLE products (
@@ -35,17 +55,27 @@ $pdo->exec('
         body TEXT NOT NULL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE login_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT NOT NULL,
+        attempted_at INTEGER NOT NULL
+    );
+    CREATE INDEX idx_login_attempts_ip ON login_attempts (ip, attempted_at);
 ');
 
 $users = [
-    ['admin', 'admin123', 'admin@norte.store', 'admin'],
-    ['maria', 'password', 'maria@norte.store', 'user'],
-    ['pedro', '123456', 'pedro@norte.store', 'user'],
+    ['admin', 'admin@norte.store', 'admin'],
+    ['maria', 'maria@norte.store', 'user'],
+    ['pedro', 'pedro@norte.store', 'user'],
 ];
 
 $stmt = $pdo->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
-foreach ($users as $u) {
-    $stmt->execute($u);
+$generated = [];
+foreach ($users as [$username, $email, $role]) {
+    $plain = bin2hex(random_bytes(9));
+    $stmt->execute([$username, password_hash($plain, PASSWORD_DEFAULT), $email, $role]);
+    $generated[] = [$username, $role, $plain];
 }
 
 $products = [
@@ -70,28 +100,8 @@ foreach ($comments as $c) {
     $stmt->execute($c);
 }
 
-header('Content-Type: text/html; charset=utf-8');
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Configuración — Norte</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-<header class="site-header">
-    <nav class="nav">
-        <a class="brand" href="index.php"><span class="brand-mark"></span> Norte</a>
-    </nav>
-</header>
-<main class="auth-shell">
-    <div class="panel panel-narrow">
-        <h1 class="page-title">Listo</h1>
-        <p class="page-lead">Catálogo y usuarios de ejemplo cargados correctamente.</p>
-        <a class="btn" href="index.php">Ir a la tienda</a>
-    </div>
-</main>
-</body>
-</html>
+echo "Base de datos creada en " . DB_PATH . "\n";
+echo "Contraseñas generadas (se muestran solo esta vez):\n";
+foreach ($generated as [$username, $role, $plain]) {
+    printf("  %-6s (%s): %s\n", $username, $role, $plain);
+}

@@ -106,6 +106,21 @@ a:hover { color: var(--coral); }
 .nav-links a:hover,
 .nav-links a.is-active { color: var(--ink); }
 
+.nav-form { margin: 0; display: inline; }
+
+.nav-link-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink-soft);
+    font-weight: 550;
+    font-size: 0.95rem;
+}
+
+.nav-link-button:hover { color: var(--ink); }
+
 .nav-cta {
     display: inline-flex;
     align-items: center;

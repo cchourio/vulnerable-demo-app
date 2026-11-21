@@ -1,0 +1,7 @@
+# Sin listados de directorio.
+Options -Indexes
+
+# Scripts de mantenimiento, documentación y archivos ocultos no se sirven por HTTP.
+<FilesMatch "^(init_db\.php|README\.md|\..+)$">
+    Require all denied
+</FilesMatch>
